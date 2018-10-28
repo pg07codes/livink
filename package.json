@@ -4,9 +4,9 @@
   "description": "",
   "main": "main.js",
   "dependencies": {
+    "bhttp": "^1.2.4",
     "cheerio": "^1.0.0-rc.2",
     "get-urls": "^8.0.0",
-    "request": "^2.88.0",
     "threads": "^0.12.0"
   },
   "devDependencies": {},

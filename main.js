@@ -1,6 +1,6 @@
 /*created by Pranav Gupta (pg07codes) on 25-10-2018 */
 
-let request = require('request')
+let bhttp = require("bhttp")
 let cheerio=require("cheerio")
 let url=require("url")
 let get_urls=require("get-urls")
@@ -11,8 +11,8 @@ const parsedURL=url.parse(URL)
 
 function getPageData(url,sanitizer){
     let urlArray=[]
-    request(url,function (err,res,body){
-        let $= cheerio.load(body)
+    bhttp.get(url,{},function (err,res,body){
+        let $= cheerio.load(res.body.toString())
         $('a').each((i,x)=>{
             urlArray.push($(x).attr('href'))
         })
