@@ -22,6 +22,7 @@ function getPageData(url,sanitizer){
 
 
 let relativeUrlRegex=new RegExp("^\/.*")
+let stringPathUrlRegex= new RegExp("^\S*")
 let samePageHashUrl=new RegExp("^#.*")
 
 function sanitizeUrls(arr){             // ask if it can be optimization
@@ -39,12 +40,17 @@ function sanitizeUrls(arr){             // ask if it can be optimization
             }
 
             // type 3 sanitization
+            else if(stringPathUrlRegex.test(url)){
+                return (parsedURL.protocol+"//"+parsedURL.hostname+'/'+url)
+            }
+
+            // type 4 sanitization
             else if(samePageHashUrl.test(url)) {
                 return (parsedURL.href+url)
             }
 
             else
-                return -2 // not built as of now to handle this case...
+                return "unknown type" // not built as of now to handle this case...
 
         }
         else
@@ -53,5 +59,4 @@ function sanitizeUrls(arr){             // ask if it can be optimization
     return arr
 }
 
-
-console.log(getPageData(URL, sanitizeUrls));
+getPageData(URL, sanitizeUrls)
