@@ -13,6 +13,7 @@ function sanitizer(urlArray, parsedURL) {
 
     return urlArray.reduce((acc, curr) => {
         if (curr === undefined) return acc;
+        if (curr.trim().length === 0) return acc;
 
         if (isUrl(curr))
             acc.push(curr);
@@ -21,7 +22,7 @@ function sanitizer(urlArray, parsedURL) {
         else if (samePageHashUrl.test(curr))
             acc.push(`${parsedURL.href}${curr}`);
         else
-            acc.push(`unidentifiedURL:${curr}`);
+            acc.push(`${parsedURL.href}/${curr}`);  // to match urls like href='user/userid'
 
         return acc;
 
@@ -30,9 +31,19 @@ function sanitizer(urlArray, parsedURL) {
 
 }
 
-function checkAlive(urlArray){
+function checkAlive(urlArray) {
     if (!Array.isArray(urlArray)) throw new Error('expected array as input');
-    
+
+    urlArray.forEach(link => {
+        if (isUrl(link)) {
+            fetch(link, { method: 'HEAD' }).then(head => {
+                if (head.status !== 200)
+                    console.log(`${link}<-->${head.status}`);
+            }).catch(err => console.log(err))
+        }else{
+            console.log('unexpected error with: ',link);
+        }
+    })
 }
 
 function scan(URL) {
@@ -64,4 +75,4 @@ module.exports = {
     scan
 };
 
-scan('https://facebook.com')
+
