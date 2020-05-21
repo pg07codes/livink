@@ -13,13 +13,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pg07codes/UPlink.git"
+    "url": "git+https://github.com/pg07codes/pingu.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/pg07codes/UPlink/issues"
+    "url": "https://github.com/pg07codes/pingu/issues"
   },
-  "homepage": "https://github.com/pg07codes/UPlink#readme"
+  "homepage": "https://github.com/pg07codes/pingu#readme"
 }

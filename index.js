@@ -2,81 +2,38 @@
 let fetch = require('node-fetch');
 let cheerio = require('cheerio');
 let url = require('url');
-let isUrl = require('./isUrl');
+/**
+ * function isUrl() code sourced from https://github.com/segmentio/is-url
+ */
 
-function sanitizer(links, URL) {
+let protocolAndDomainRE = /^(?:\w+:)?\/\/(\S+)$/;
+let localhostDomainRE = /^localhost[\:?\d]*(?:[^\:?\d]\S*)?$/
+let nonLocalhostDomainRE = /^[^\s\.]+\.\S{2,}$/;
 
-    if (!Array.isArray(links)) throw new Error('expected array as input');
+function isUrl(string){
+  if (typeof string !== 'string') {
+    return false;
+  }
 
-    const rootRelativeUrl = new RegExp("^\/.*") // eg. '/images/cat.png'
-    const samePageHashUrl = new RegExp("^#.*")  // eg. '#footer-image'
-    const sameProtocolUrl = new RegExp("^\/\/.*")  // eg. '//my-domain.com/images/cat.png'
+  let match = string.match(protocolAndDomainRE);
+  if (!match) {
+    return false;
+  }
 
-    // these url formats not currently supported (support them + base tags - feature)
-    // const relativeUrl = new RegExp("^\w.*")  // eg. 'images/cat.png' 
-    // const relativeDotUrl = new RegExp("^\.\/.*")  // eg. './images/cat.png'
+  let everythingAfterProtocol = match[1];
+  if (!everythingAfterProtocol) {
+    return false;
+  }
 
-    return links.reduce((acc, curr) => {
+  if (localhostDomainRE.test(everythingAfterProtocol)) {
+    return false; // currently my library does not support localhost scanning
+  }
 
-        if (curr === undefined) return acc; // yeah this also is returned sometimes.
-        if (curr.trim().length === 0) return acc; // empty string in page (may be pointing to root page)
+  if(nonLocalhostDomainRE.test(everythingAfterProtocol)){
+    return true; // only non localhost urls are valid input for library
+  }
 
-        if (isUrl(curr))
-            acc.push(curr);
-        else if (rootRelativeUrl.test(curr))
-            acc.push(`${URL.protocol}//${URL.hostname}${curr}`);
-        else if (samePageHashUrl.test(curr))
-            acc.push(`${URL.href}${curr}`);
-        else if (sameProtocolUrl.test(curr))
-            acc.push(`${URL.protocol}${curr}`);
-        else
-            acc.push(`not-supported :${curr}`);
-
-        return acc;
-
-    }, []);
-
-
-}
-
-async function linkFilter(links, STATUS) {
-
-    if (!Array.isArray(links)) throw new Error('expected array as input');
-    if (typeof STATUS !== 'number') throw new Error('expected status as number');
-
-    let filteredLinks = [];
-
-    // using this to remove unsupported links for now
-    const notSupported = new RegExp("^not-supported :.*")
-    links = links.filter(link =>{
-        if(notSupported.test(link)){
-            console.log(link);
-            return false;
-        }else{
-            return true;
-        }
-    })
-    // above code is only for removing unsupported links for now.
-
-
-    try {
-        let results = await Promise.allSettled(links.map(link => fetch(link, { method: 'HEAD' })));
-        links.forEach((link, idx) => {
-            if (results[idx].status === 'fulfilled') {
-                let status = results[idx].value.status;
-                if (STATUS === -1 || status === STATUS)
-                    filteredLinks.push({ link, status });
-            } else {
-                filteredLinks.push({ link, status: `erred` });
-            }
-        })
-
-        return filteredLinks;
-    }
-    catch (err) {
-        throw new Error(err);
-    }
-
+  return false;
 }
 
 /*
@@ -85,29 +42,128 @@ async function linkFilter(links, STATUS) {
  * links - refers to the href values extracted from page pointed by 'url'
  */
 
-async function scan(string, config) {
+function between(x, min, max) {
+    return x >= min && x <= max;
+}
 
-    let STATUS;
+
+async function linkFilterByStatus(links, status) {
+
+    if (!Array.isArray(links)) throw new Error('internal:expected input as array');
+
+    let filteredLinks = [];
+
+    try {
+        let results = await Promise.allSettled(links.map(link => fetch(link, { method: 'HEAD' })));
+
+        links.forEach((link, idx) => {
+
+            if (results[idx].status === 'fulfilled') {
+                let returnedStatus = results[idx].value.status;
+                if (status === 'ALL' || status.includes(returnedStatus))
+                    filteredLinks.push({ link, returnedStatus });
+            } else {
+                filteredLinks.push({ link, status: `fetching error ` });
+            }
+
+        })
+
+        return filteredLinks;
+    }
+    catch (err) {
+        throw new Error(err);
+    }
+}
+
+async function linkFilterByRange(links, status) {
+
+    if (!Array.isArray(links)) throw new Error('internal:expected input as array');
+    if (!Array.isArray(status)) throw new Error('internal:expected status as array');
+
+    let filteredLinks = [];
+
+    try {
+        let results = await Promise.allSettled(links.map(link => fetch(link, { method: 'HEAD' })));
+
+        links.forEach((link, idx) => {
+
+            if (results[idx].status === 'fulfilled') {
+                let returnedStatus = results[idx].value.status;
+                if (between(returnedStatus, status[0], status[1]))
+                    filteredLinks.push({ link, returnedStatus });
+            } else {
+                filteredLinks.push({ link, status: `fetching error ` });
+            }
+
+        })
+
+        return filteredLinks;
+    }
+    catch (err) {
+        throw new Error(err);
+    }
+}
+
+function getClass(status) {
+    if (between(status, 100, 199)) {
+        return "info";
+    } else if (between(status, 200, 299)) {
+        return "success";
+    } else if (between(status, 300, 399)) {
+        return "redirect";
+    } else if (between(status, 400, 499)) {
+        return "clientErr";
+    } else if (between(status, 500, 599)) {
+        return "serverErr"
+    } else
+        return "__invalid";
+}
+
+async function linkFilterByClass(links, status) {
+
+    if (!Array.isArray(links)) throw new Error('internal:expected input as array');
+    if (!Array.isArray(status)) throw new Error('internal:expected status as array');
+
+    let filteredLinks = [];
+
+    try {
+        let results = await Promise.allSettled(links.map(link => fetch(link, { method: 'HEAD' })));
+
+        links.forEach((link, idx) => {
+
+            if (results[idx].status === 'fulfilled') {
+                let returnedStatus = results[idx].value.status;
+                if (status.includes(getClass(returnedStatus)))
+                    filteredLinks.push({ link, returnedStatus });
+            } else {
+                filteredLinks.push({ link, status: `fetching error ` });
+            }
+
+        })
+
+        return filteredLinks;
+    }
+    catch (err) {
+        throw new Error(err);
+    }
+}
+
+async function scan(string, config = {}) {
 
     if (typeof string !== 'string') throw new Error('URL must be in string format');
     if (!isUrl(string)) throw new Error('invalid URL');
+    const URL = string;  // validation of string as url completed
+
     if (typeof config !== 'object') {
-        if (typeof config !== 'undefined') {
-            throw new Error('config must be an object');
-        } else {
-            STATUS = -1; // -1 indicates "return links with any status" 
-        }
-    } else {
-        if (typeof config.status !== 'number' || config.status === -1) { // as -1 is reserved status 
-            throw new Error('status value provided is invalid');
-        } else {
-            STATUS = config.status;
-        }
+        throw new Error('config must be an object');
+    }
+    if (Object.keys(config).length > 1) {
+        throw new Error('invalid config object passed');
     }
 
-    const URL = url.parse(string);
-    let links = [];
 
+    // improper placement - optimize it ...no point of fetching if it has to err later
+    let links = [];
     try {
         const body = await fetch(URL).then(res => res.text())
         let $ = cheerio.load(body);
@@ -115,13 +171,50 @@ async function scan(string, config) {
             links.push($(x).attr('href'))
         })
     } catch (err) {
-        throw new Error('fetching of provided url failed. check your internet')
+        throw new Error('fetching of provided url failed. check your internet', err)
     }
 
+    links = links.reduce((acc, link) => {
+        if (link === undefined) return acc; // yeah this also is returned sometimes.
+        acc.push(url.resolve(URL, link))
+        return acc;
+    }, []);
+    // improper placement - optimize it ...no point of fetching if it has to err later
 
-    links = sanitizer(links, URL);
 
-    return linkFilter(links, STATUS)
+    if (Object.keys(config).length === 0) {
+        config.status = 'ALL'; // flag 'ALL' denotes return all links
+        return linkFilterByStatus(links, status);
+    }
+
+    if (config.hasOwnProperty('status')) {
+        if (typeof config.status === 'number') {
+            return linkFilterByStatus(links, [config.status]);
+        } else if (Array.isArray(config.status)) {
+            return linkFilterByStatus(links, config.status);
+
+        } else {
+            throw new Error('invalid status value: neither number nor array');
+        }
+    } else if (config.hasOwnProperty('statusRange')) {
+        if (Array.isArray(config.statusRange) && config.statusRange.length == 2
+            && (config.statusRange[0] < config.statusRange[1])) {
+            return linkFilterByRange(links, status)
+        } else {
+            throw new Error('invalid statusRange value: should be ascending two item array');
+        }
+    } else if (config.hasOwnProperty('statusClass')) {
+        if (typeof config.statusClass === 'string') {
+            return linkFilterByClass(links, [config.statusClass]);
+        } else if (Array.isArray(config.statusClass)) {
+            return linkFilterByClass(links, [config.statusClass]);
+
+        } else {
+            throw new Error('invalid statusClass value: neither string nor array');
+        }
+    } else {
+        throw new Error('invalid config object property')
+    }
 
 
 }
@@ -129,5 +222,3 @@ async function scan(string, config) {
 module.exports = {
     scan
 };
-
-
