@@ -10,30 +10,30 @@ let protocolAndDomainRE = /^(?:\w+:)?\/\/(\S+)$/;
 let localhostDomainRE = /^localhost[\:?\d]*(?:[^\:?\d]\S*)?$/
 let nonLocalhostDomainRE = /^[^\s\.]+\.\S{2,}$/;
 
-function isUrl(string){
-  if (typeof string !== 'string') {
+function isUrl(string) {
+    if (typeof string !== 'string') {
+        return false;
+    }
+
+    let match = string.match(protocolAndDomainRE);
+    if (!match) {
+        return false;
+    }
+
+    let everythingAfterProtocol = match[1];
+    if (!everythingAfterProtocol) {
+        return false;
+    }
+
+    if (localhostDomainRE.test(everythingAfterProtocol)) {
+        return false; // currently my library does not support localhost scanning
+    }
+
+    if (nonLocalhostDomainRE.test(everythingAfterProtocol)) {
+        return true; // only non localhost urls are valid input for library
+    }
+
     return false;
-  }
-
-  let match = string.match(protocolAndDomainRE);
-  if (!match) {
-    return false;
-  }
-
-  let everythingAfterProtocol = match[1];
-  if (!everythingAfterProtocol) {
-    return false;
-  }
-
-  if (localhostDomainRE.test(everythingAfterProtocol)) {
-    return false; // currently my library does not support localhost scanning
-  }
-
-  if(nonLocalhostDomainRE.test(everythingAfterProtocol)){
-    return true; // only non localhost urls are valid input for library
-  }
-
-  return false;
 }
 
 /*
@@ -148,7 +148,7 @@ async function linkFilterByClass(links, status) {
     }
 }
 
-async function scan(string, config = {}) {
+module.exports = async function livink(string, config = {}) {
 
     if (typeof string !== 'string') throw new Error('URL must be in string format');
     if (!isUrl(string)) throw new Error('invalid URL');
@@ -163,6 +163,7 @@ async function scan(string, config = {}) {
 
 
     // improper placement - optimize it ...no point of fetching if it has to err later
+    // ____________________
     let links = [];
     try {
         const body = await fetch(URL).then(res => res.text())
@@ -179,12 +180,13 @@ async function scan(string, config = {}) {
         acc.push(url.resolve(URL, link))
         return acc;
     }, []);
+    // ^^^^^^^^^^^^^^^
     // improper placement - optimize it ...no point of fetching if it has to err later
 
 
     if (Object.keys(config).length === 0) {
         config.status = 'ALL'; // flag 'ALL' denotes return all links
-        return linkFilterByStatus(links, status);
+        return linkFilterByStatus(links, config.status);
     }
 
     if (config.hasOwnProperty('status')) {
@@ -199,7 +201,7 @@ async function scan(string, config = {}) {
     } else if (config.hasOwnProperty('statusRange')) {
         if (Array.isArray(config.statusRange) && config.statusRange.length == 2
             && (config.statusRange[0] < config.statusRange[1])) {
-            return linkFilterByRange(links, status)
+            return linkFilterByRange(links, config.statusRange)
         } else {
             throw new Error('invalid statusRange value: should be ascending two item array');
         }
@@ -218,7 +220,3 @@ async function scan(string, config = {}) {
 
 
 }
-
-module.exports = {
-    scan
-};

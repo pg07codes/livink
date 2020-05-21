@@ -1,25 +1,33 @@
 {
-  "name": "pingu",
+  "name": "livink",
   "version": "1.0.0",
-  "description": "",
-  "main": "main.js",
+  "description": "Get all links from a webpage filtered by status codes, status classes and more options",
+  "main": "index.js",
   "dependencies": {
     "cheerio": "^1.0.0-rc.3",
     "node-fetch": "^2.6.0"
   },
   "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pg07codes/pingu.git"
+    "url": "git+https://github.com/pg07codes/livink.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "livink",
+    "url-checker",
+    "url status check",
+    "url check",
+    "live link"
+  ],
+  "author": {
+    "name": "Pranav Gupta",
+    "email": "pg07codes@gmail.com",
+    "url": "https://pg07codes.github.io"
+  },
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/pg07codes/pingu/issues"
+    "url": "https://github.com/pg07codes/livink/issues"
   },
-  "homepage": "https://github.com/pg07codes/pingu#readme"
+  "homepage": "https://github.com/pg07codes/livink#readme"
 }
