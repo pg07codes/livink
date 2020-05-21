@@ -24,9 +24,12 @@ function isUrl(string){
     return false;
   }
 
-  if (localhostDomainRE.test(everythingAfterProtocol) ||
-      nonLocalhostDomainRE.test(everythingAfterProtocol)) {
-    return true;
+  if (localhostDomainRE.test(everythingAfterProtocol)) {
+    return false; // currently my library does not support localhost scanning
+  }
+
+  if(nonLocalhostDomainRE.test(everythingAfterProtocol)){
+    return true; // only non localhost urls are valid input for library
   }
 
   return false;
