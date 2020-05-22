@@ -108,7 +108,7 @@ console.log(res);
 // or use with statusClass
 
 l("https://any-valid-url-here.com",{
-	{statusClass:['clientErr','nonStandard']}  // only single string can also be used
+	statusClass:['clientErr','nonStandard']  // only single string can also be used
 }).then(res=>{ 
 console.log(res);
 })
