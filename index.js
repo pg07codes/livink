@@ -116,7 +116,7 @@ function getClass(status) {
     } else if (between(status, 500, 599)) {
         return "serverErr"
     } else
-        return "__invalid";
+        return "nonStandard";
 }
 
 async function linkFilterByClass(links, status) {
@@ -148,22 +148,7 @@ async function linkFilterByClass(links, status) {
     }
 }
 
-module.exports = async function livink(string, config = {}) {
-
-    if (typeof string !== 'string') throw new Error('URL must be in string format');
-    if (!isUrl(string)) throw new Error('invalid URL');
-    const URL = string;  // validation of string as url completed
-
-    if (typeof config !== 'object') {
-        throw new Error('config must be an object');
-    }
-    if (Object.keys(config).length > 1) {
-        throw new Error('invalid config object passed');
-    }
-
-
-    // improper placement - optimize it ...no point of fetching if it has to err later
-    // ____________________
+async function fetchLinks(URL) {
     let links = [];
     try {
         const body = await fetch(URL).then(res => res.text())
@@ -180,19 +165,40 @@ module.exports = async function livink(string, config = {}) {
         acc.push(url.resolve(URL, link))
         return acc;
     }, []);
-    // ^^^^^^^^^^^^^^^
-    // improper placement - optimize it ...no point of fetching if it has to err later
 
+    return links;
+}
+
+
+
+module.exports = async function livink(string, config = {}) {
+
+    if (typeof string !== 'string') throw new Error('URL must be in string format');
+    if (!isUrl(string)) throw new Error('invalid URL');
+    const URL = string;  // validation of string as url completed
+
+    if (typeof config !== 'object') {
+        throw new Error('config must be an object');
+    }
+    if (Object.keys(config).length > 1) {
+        throw new Error('invalid config object passed');
+    }
+
+
+    let links = [];
 
     if (Object.keys(config).length === 0) {
         config.status = 'ALL'; // flag 'ALL' denotes return all links
+        links = await fetchLinks(URL);
         return linkFilterByStatus(links, config.status);
     }
 
     if (config.hasOwnProperty('status')) {
         if (typeof config.status === 'number') {
+            links = await fetchLinks(URL);
             return linkFilterByStatus(links, [config.status]);
         } else if (Array.isArray(config.status)) {
+            links = await fetchLinks(URL);
             return linkFilterByStatus(links, config.status);
 
         } else {
@@ -201,15 +207,18 @@ module.exports = async function livink(string, config = {}) {
     } else if (config.hasOwnProperty('statusRange')) {
         if (Array.isArray(config.statusRange) && config.statusRange.length == 2
             && (config.statusRange[0] < config.statusRange[1])) {
+            links = await fetchLinks(URL);
             return linkFilterByRange(links, config.statusRange)
         } else {
             throw new Error('invalid statusRange value: should be ascending two item array');
         }
     } else if (config.hasOwnProperty('statusClass')) {
         if (typeof config.statusClass === 'string') {
+            links = await fetchLinks(URL) ;
             return linkFilterByClass(links, [config.statusClass]);
         } else if (Array.isArray(config.statusClass)) {
-            return linkFilterByClass(links, [config.statusClass]);
+            links = await fetchLinks(URL) ;
+            return linkFilterByClass(links, config.statusClass);
 
         } else {
             throw new Error('invalid statusClass value: neither string nor array');

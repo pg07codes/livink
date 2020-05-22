@@ -25,6 +25,10 @@
     "email": "pg07codes@gmail.com",
     "url": "https://pg07codes.github.io"
   },
+  "enginesStrict": true,
+  "engines": {
+    "node": ">=12.9.0"
+  },
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/pg07codes/livink/issues"

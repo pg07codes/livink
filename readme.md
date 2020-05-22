@@ -1,14 +1,17 @@
 
+<p align="center">
+<img src="https://user-images.githubusercontent.com/34238240/82594261-6e50bd80-9bc1-11ea-9176-9b9b99be48ed.png" alt="livinkLogo">
+</p>
 # livink
 > Get all links from a webpage filtered by status codes, status classes and many more
-
-![logo](https://user-images.githubusercontent.com/34238240/82594261-6e50bd80-9bc1-11ea-9176-9b9b99be48ed.png)
+> livink makes all requests in parallel thus making it work extremely fast.
 
   
 ## Install
 ```
 $ npm install livink
 ```
+- note that it currently works only node version `>=12.9.0` as it uses `Promises.allSettled()`.
 
 ## Usage
 
@@ -30,7 +33,8 @@ console.log(res);
   { link: 'https://abc.com/do/it/page', returnedStatus: 405 },
   { link: 'https://abc.com/domains/example', returnedStatus: 200 },
   { link: 'https://xyz.com/domains/id?q=true', returnedStatus: 301 },
-  { link: 'https://pqr.com/example', returnedStatus: 203 }
+  { link: 'https://pqr.com/example', returnedStatus: 203 },
+  { link: 'https://pqr.co.in/this?query=ok', returnedStatus: 999 }
 ]
 */
 
@@ -43,7 +47,7 @@ statusRange: must be an two item array[min-status-code,max-status-code]
 statusClass: can be a string(status class) or array of status class
 }
 ```
-- note 1: string/string array value of `statusClass` must be from these strings-  `'info'`, `'success'`, `'redirect'`, `'clientErr'`, `'serverErr'` only. Visit [here](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) to see why they are named like this.
+- note 1: string/string array value of `statusClass` must be from these strings-  `'info'`, `'success'`, `'redirect'`, `'clientErr'`, `'serverErr'`, `'nonStandard'` only. Visit [here](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) to see why they are named like this.
 - note 2: only one of the three keys `status`,`statusRange`,`statusClass` must be passed in configuration object as of now. Make an issue if you need to use them simultaneously.
 
 ```js
@@ -103,22 +107,24 @@ console.log(res);
 // or use with statusClass
 
 livink("https://any-valid-url-here.com",{
-	statusClass:'clientErr'  // filters links with status codes which fall in status class of clientError ie. between 400-499. 
+	{statusClass:['clientErr','nonStandard']}  // only single string can also be used
 }).then(res=>{ 
 console.log(res);
 })
-/* sample output
+/* sample output of clientErrors and nonStandard status codes
 [
   { link: 'https://xyz.com/example', returnedStatus: 404 },
   { link: 'https://xyz.com/', returnedStatus: 400 },
   { link: 'https://abc.com/do/it/page', returnedStatus: 405 }
+  { link: 'https://pqr.co.in/this?query=ok', returnedStatus: 999 }
 ]
 */
 
 ```
 
-**Finding this package useful, star this repo**
-**Found a bug or want a feature, make an issue for it**
+**Finding this package useful, star this repo.  **
+
+**Found a bug or want a feature, make an issue for it. **
 
 
 
