@@ -2,9 +2,10 @@
 <p align="center">
 <img src="https://user-images.githubusercontent.com/34238240/82594261-6e50bd80-9bc1-11ea-9176-9b9b99be48ed.png" alt="livinkLogo">
 </p>
+
 # livink
-> Get all links from a webpage filtered by status codes, status classes and many more
-> livink makes all requests in parallel thus making it work extremely fast.
+
+> Get all links from a webpage filtered by status codes, status classes and many more. Livink makes all requests in parallel making it work extremely fast.
 
   
 ## Install
@@ -16,11 +17,11 @@ $ npm install livink
 ## Usage
 
 ```js
-const livink = require('livink');
+const l = require('livink');
 
 // use without any configuration like this
 
-livink("https://any-valid-url-here.com").then(res=>{
+l("https://any-valid-url-here.com").then(res=>{
 console.log(res);
 });
 /* sample output of all links (img,href,mailto,etc)
@@ -54,7 +55,7 @@ statusClass: can be a string(status class) or array of status class
 
 // use with config object like this
 
-livink("https://any-valid-url-here.com",{
+l("https://any-valid-url-here.com",{
 	status:404    // filters links with 404 status
 }).then(res=>{
 console.log(res);
@@ -67,7 +68,7 @@ console.log(res);
 
 // or like this
 
-livink("https://any-valid-url-here.com",{
+l("https://any-valid-url-here.com",{
 	status:[200,404,500]   // filters links with status codes in array
 }).then(res=>{
 console.log(res);
@@ -86,7 +87,7 @@ console.log(res);
 ```js
 // or use with statusRange 
 
-livink("https://any-valid-url-here.com",{
+l("https://any-valid-url-here.com",{
 	statusRange:[203,410]   // filters links between 203 and 410(including both)
 }).then(res=>{
 console.log(res);
@@ -106,7 +107,7 @@ console.log(res);
 
 // or use with statusClass
 
-livink("https://any-valid-url-here.com",{
+l("https://any-valid-url-here.com",{
 	{statusClass:['clientErr','nonStandard']}  // only single string can also be used
 }).then(res=>{ 
 console.log(res);
@@ -122,9 +123,9 @@ console.log(res);
 
 ```
 
-**Finding this package useful, star this repo.  **
+**Finding this package useful, star this repo.**
 
-**Found a bug or want a feature, make an issue for it. **
+**Found a bug or want a feature, make an issue for it.**
 
 
 
