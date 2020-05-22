@@ -1,6 +1,6 @@
 {
   "name": "livink",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Get all links from a webpage filtered by status codes, status classes and more options",
   "main": "index.js",
   "dependencies": {
