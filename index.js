@@ -2,6 +2,7 @@
 let fetch = require('node-fetch');
 let cheerio = require('cheerio');
 let url = require('url');
+const { link } = require('fs');
 /**
  * function isUrl() code sourced from https://github.com/segmentio/is-url
  */
@@ -148,26 +149,87 @@ async function linkFilterByClass(links, status) {
     }
 }
 
-async function fetchLinks(URL) {
+const filter = (linksArray, config) => {
+
+
+    let links = [];
+
+    if (Object.keys(config).length === 0) {
+        config.status = 'ALL'; // flag 'ALL' denotes return all links
+        links = await fetchLinks(URL, 0);
+        return linkFilterByStatus(links, config.status);
+    }
+
+    if (config.hasOwnProperty('status')) {
+        if (typeof config.status === 'number') {
+            links = await fetchLinks(URL, 0);
+            return linkFilterByStatus(links, [config.status]);
+        } else if (Array.isArray(config.status)) {
+            links = await fetchLinks(URL, 0);
+            return linkFilterByStatus(links, config.status);
+
+        } else {
+            throw new Error('invalid status value: neither number nor array');
+        }
+    } else if (config.hasOwnProperty('statusRange')) {
+        if (Array.isArray(config.statusRange) && config.statusRange.length == 2
+            && (config.statusRange[0] < config.statusRange[1])) {
+            links = await fetchLinks(URL, 0);
+            return linkFilterByRange(links, config.statusRange)
+        } else {
+            throw new Error('invalid statusRange value: should be ascending two item array');
+        }
+    } else if (config.hasOwnProperty('statusClass')) {
+        if (typeof config.statusClass === 'string') {
+            links = await fetchLinks(URL, 0);
+            return linkFilterByClass(links, [config.statusClass]);
+        } else if (Array.isArray(config.statusClass)) {
+            links = await fetchLinks(URL, 0);
+            return linkFilterByClass(links, config.statusClass);
+
+        } else {
+            throw new Error('invalid statusClass value: neither string nor array');
+        }
+    } else {
+        throw new Error('invalid config object property')
+    }
+
+
+}
+
+const fetchLinks = async (URL, depth) => {
+
     let links = [];
     try {
-        const body = await fetch(URL).then(res => res.text())
+        const body = await fetch(URL).then(res => res.text()).catch(e => { throw new Error(e) });
         let $ = cheerio.load(body);
         $('a').each((_, x) => {
             links.push($(x).attr('href'))
         })
     } catch (err) {
-        throw new Error('fetching of provided url failed. check your internet', err)
+        console.log('fetching of provided url failed. ERROR : ', err)
     }
 
     links = links.reduce((acc, link) => {
         if (link === undefined) return acc; // yeah this also is returned sometimes.
-        acc.push(url.resolve(URL, link))
+        acc.push({ link: url.resolve(URL, link), linkFoundOn: URL })
         return acc;
     }, []);
 
-    return links;
+    if (depth == 0) return links;
+
+
+    let recLinkResults = links;
+    for (let i = 0; i < links.length; i++) {
+        let tmp = await fetchLinks(links[i].link, depth - 1);
+        recLinkResults = recLinkResults.concat(tmp);
+    }
+
+    return recLinkResults;
+
 }
+
+
 
 
 
@@ -184,48 +246,6 @@ module.exports = async function livink(string, config = {}) {
         throw new Error('invalid config object passed');
     }
 
-
-    let links = [];
-
-    if (Object.keys(config).length === 0) {
-        config.status = 'ALL'; // flag 'ALL' denotes return all links
-        links = await fetchLinks(URL);
-        return linkFilterByStatus(links, config.status);
-    }
-
-    if (config.hasOwnProperty('status')) {
-        if (typeof config.status === 'number') {
-            links = await fetchLinks(URL);
-            return linkFilterByStatus(links, [config.status]);
-        } else if (Array.isArray(config.status)) {
-            links = await fetchLinks(URL);
-            return linkFilterByStatus(links, config.status);
-
-        } else {
-            throw new Error('invalid status value: neither number nor array');
-        }
-    } else if (config.hasOwnProperty('statusRange')) {
-        if (Array.isArray(config.statusRange) && config.statusRange.length == 2
-            && (config.statusRange[0] < config.statusRange[1])) {
-            links = await fetchLinks(URL);
-            return linkFilterByRange(links, config.statusRange)
-        } else {
-            throw new Error('invalid statusRange value: should be ascending two item array');
-        }
-    } else if (config.hasOwnProperty('statusClass')) {
-        if (typeof config.statusClass === 'string') {
-            links = await fetchLinks(URL) ;
-            return linkFilterByClass(links, [config.statusClass]);
-        } else if (Array.isArray(config.statusClass)) {
-            links = await fetchLinks(URL) ;
-            return linkFilterByClass(links, config.statusClass);
-
-        } else {
-            throw new Error('invalid statusClass value: neither string nor array');
-        }
-    } else {
-        throw new Error('invalid config object property')
-    }
 
 
 }
