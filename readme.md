@@ -48,11 +48,6 @@ console.log(res);
   ...
   { link: 'https://xyz.com/someSampleURL786',  linkFoundOn:"https://xyz.com/sampleURL" },
   ...
-  { link:'https://abcd.com/somepath',linkFoundOn: 'https://xyz.com/domains/ex123' },
-  ...
-  { link:'https://pqrs.com/path', linkFoundOn: 'https://xyz.com/trip-nights' },
-  ...
-  { link:'https://xywz.io/startup', linkFoundOn: 'https://xyz.com/someSampleURL786' },
 
 
 ]
@@ -171,6 +166,8 @@ livink("https://any-valid-url-here.com").then(links=>{
 
 ```
 
-**MIT LICENSE :copyright: Pranav Gupta**
-**Finding this package useful, star this repo.**
-**Found a bug or want a feature, make an issue for it.**
+- **MIT LICENSE :copyright: Pranav Gupta**
+
+- **Finding this package useful, star this repo.**
+
+- **Found a bug or want a feature, make an issue for it.**
